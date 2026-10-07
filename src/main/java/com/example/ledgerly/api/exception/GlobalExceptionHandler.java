@@ -28,7 +28,7 @@ public class GlobalExceptionHandler
     {
         String errorID = UUID.randomUUID().toString();
 
-        log.error("Unhandled exception occurred. Error ID: {}", sanitiseForLog(errorID), ex);
+        log.error("Unhandled exception occurred. Error ID: " + sanitiseForLog(errorID), ex);
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail
         (
