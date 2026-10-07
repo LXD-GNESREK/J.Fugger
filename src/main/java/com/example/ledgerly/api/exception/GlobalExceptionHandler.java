@@ -3,6 +3,7 @@ package com.example.ledgerly.api.exception;
 import com.example.ledgerly.domain.exception.AccessNotAllowedException;
 import com.example.ledgerly.domain.exception.ExpenseNotFoundException;
 import com.example.ledgerly.domain.exception.InvalidStatusTransitionException;
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ public class GlobalExceptionHandler
     }
 
     @ExceptionHandler
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS", justification = "CRLF handled by Logback configuration; stack traces must be logged.")
     public ProblemDetail handleAllUncaughtExceptions(Exception ex)
     {
         String errorID = UUID.randomUUID().toString();
