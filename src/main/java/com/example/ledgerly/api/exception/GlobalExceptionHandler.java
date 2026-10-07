@@ -17,12 +17,18 @@ public class GlobalExceptionHandler
 {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private String sanitiseForLog(String input)
+    {
+        if(input == null) return null;
+        return input.replaceAll("[\r\n]", "_");
+    }
+
     @ExceptionHandler
     public ProblemDetail handleAllUncaughtExceptions(Exception ex)
     {
         String errorID = UUID.randomUUID().toString();
 
-        log.error("Unhandled exception occurred. Error ID: {}", errorID, ex);
+        log.error("Unhandled exception occurred. Error ID: {}", sanitiseForLog(errorID), ex);
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail
         (
@@ -54,7 +60,7 @@ public class GlobalExceptionHandler
     @ExceptionHandler(AccessNotAllowedException.class)
     public ProblemDetail handleAccessNotAllowed(AccessNotAllowedException ex)
     {
-        log.warn("Unauthorised access attempt: {}", ex.getMessage());
+        log.warn("Unauthorised access attempt: {}", sanitiseForLog(ex.getMessage()));
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
         problem.setTitle("Access Denied");
