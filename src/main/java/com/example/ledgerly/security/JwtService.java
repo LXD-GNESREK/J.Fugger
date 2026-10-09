@@ -16,7 +16,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Service
-public class JwtService {
+public final class JwtService {
 
     private final SecretKey key;
     private final Duration accessTtl;

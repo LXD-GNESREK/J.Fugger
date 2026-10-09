@@ -43,6 +43,9 @@ public class AuthController
     private final RefreshTokenService refreshTokenService;
     private final AuthCookieService cookies;
 
+    @SuppressFBWarnings(
+            value = "EI_EXPOSE_REP2",
+            justification = "Spring-verwaltete Beans (Dependency Injection); es werden keine veränderbaren Daten von außen übernommen.")
     public AuthController(AuthenticationManager authenticationManager,
                           AppUserDetailsService userDetailsService,
                           JwtService jwtService,
