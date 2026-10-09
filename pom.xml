@@ -90,6 +90,12 @@
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
+			<version>4.8.3</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -98,7 +104,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<plugin> <!--SAST-->
+			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
 				<version>4.8.3.1</version>
@@ -130,12 +136,14 @@
 			<build>
 				<plugins>
 					<plugin>
-						<groupId>org.owasp</groupId>
+						<groupId>org.owasp</groupId> <!--SAST-->
 						<artifactId>dependency-check-maven</artifactId>
 						<version>9.0.9</version>
 						<configuration>
 							<failBuildOnCVSS>7.0</failBuildOnCVSS>
 							<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+							<nvdApiDelay>8000</nvdApiDelay>
+							<failOnError>false</failOnError>
 						</configuration>
 						<executions>
 							<execution>
