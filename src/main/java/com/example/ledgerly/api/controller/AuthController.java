@@ -2,6 +2,7 @@ package com.example.ledgerly.api.controller;
 
 import com.example.ledgerly.api.dto.in.LoginRequest;
 import com.example.ledgerly.api.dto.out.LoginResponse;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+@SuppressFBWarnings(
+        value = "SPRING_ENDPOINT",
+        justification = "Der Login-Endpoint ist bewusst öffentlich erreichbar; das Pattern ist nur ein Hinweis auf jeden Spring-Controller.")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController
