@@ -6,6 +6,7 @@ import com.example.ledgerly.application.service.RefreshTokenService;
 import com.example.ledgerly.security.AppUserDetailsService;
 import com.example.ledgerly.security.AuthCookieService;
 import com.example.ledgerly.security.JwtService;
+import com.example.ledgerly.security.bruteforce.LoginAttemptService;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -25,7 +26,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 @SuppressFBWarnings(
         value = "SPRING_ENDPOINT",
@@ -36,12 +39,15 @@ public class AuthController
 {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private static final String GENERIC_ERROR = "Benutzername oder Passwort ist falsch.";
+    private static final String LOCKED_ERROR =
+            "Zu viele fehlgeschlagene Anmeldeversuche. Bitte später erneut versuchen.";
 
     private final AuthenticationManager authenticationManager;
     private final AppUserDetailsService userDetailsService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final AuthCookieService cookies;
+    private final LoginAttemptService loginAttempts;
 
     @SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
@@ -50,23 +56,38 @@ public class AuthController
                           AppUserDetailsService userDetailsService,
                           JwtService jwtService,
                           RefreshTokenService refreshTokenService,
-                          AuthCookieService cookies)
+                          AuthCookieService cookies,
+                          LoginAttemptService loginAttempts)
     {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.cookies = cookies;
+        this.loginAttempts = loginAttempts;
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request)
     {
+        // Gesperrt -> Passwort gar nicht erst prüfen (auch ein RICHTIGES Passwort wird abgelehnt,
+        // sonst könnte ein Angreifer während der Sperre weiter raten)
+        Optional<Duration> lock = loginAttempts.remainingLock(request.username());
+        if (lock.isPresent())
+        {
+            log.warn("Login abgelehnt: Account temporär gesperrt");
+            long retryAfter = Math.max(1, lock.get().toSeconds() + 1);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .header(HttpHeaders.RETRY_AFTER, Long.toString(retryAfter))
+                    .body(Map.of("message", LOCKED_ERROR));
+        }
+
         try
         {
             Authentication auth = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(request.username(), request.password()));
 
+            loginAttempts.loginSucceeded(request.username());
             UserDetails user = (UserDetails) auth.getPrincipal();
             String refreshToken = refreshTokenService.issueNewFamily(user.getUsername());
             return respondWithTokens(user, refreshToken);
@@ -75,6 +96,7 @@ public class AuthController
         {
             // Gleiche Antwort für unbekannten User, falsches Passwort und gesperrten Account
             log.warn("Fehlgeschlagener Login-Versuch");   // bewusst ohne User-Eingabe (Log Injection)
+            loginAttempts.loginFailed(request.username());   // zählt auch für unbekannte User (keine Enumeration)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", GENERIC_ERROR));
         }
     }
