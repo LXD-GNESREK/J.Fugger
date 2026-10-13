@@ -3,6 +3,7 @@ package com.example.ledgerly.api.controller;
 import com.example.ledgerly.api.dto.in.LoginRequest;
 import com.example.ledgerly.api.dto.out.LoginResponse;
 import com.example.ledgerly.application.service.RefreshTokenService;
+import com.example.ledgerly.security.AccessRules;
 import com.example.ledgerly.security.AppUserDetailsService;
 import com.example.ledgerly.security.AuthCookieService;
 import com.example.ledgerly.security.JwtService;
@@ -14,13 +15,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +71,7 @@ public class AuthController
         this.loginAttempts = loginAttempts;
     }
 
+    @PreAuthorize(AccessRules.PUBLIC)
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request)
     {
@@ -101,6 +106,7 @@ public class AuthController
         }
     }
 
+    @PreAuthorize(AccessRules.PUBLIC)
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(
             @CookieValue(name = AuthCookieService.REFRESH_COOKIE, required = false) String refreshToken)
@@ -133,6 +139,7 @@ public class AuthController
         }
     }
 
+    @PreAuthorize(AccessRules.PUBLIC)
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
             @CookieValue(name = AuthCookieService.REFRESH_COOKIE, required = false) String refreshToken)
@@ -142,6 +149,19 @@ public class AuthController
                 .header(HttpHeaders.SET_COOKIE, cookies.clearAccess().toString())
                 .header(HttpHeaders.SET_COOKIE, cookies.clearRefresh().toString())
                 .build();
+    }
+
+    /**
+     * Wer bin ich? Das Angular-Frontend kann das HttpOnly-Cookie nicht lesen und fragt hier
+     * nach Username + Rolle, z. B. nach einem Reload der Seite. Nur für die UI (Route Guards),
+     * die echte Prüfung passiert immer im Backend.
+     */
+    @PreAuthorize(AccessRules.AUTHENTICATED)
+    @GetMapping("/me")
+    public LoginResponse me(@AuthenticationPrincipal UserDetails user)
+    {
+        String role = user.getAuthorities().iterator().next().getAuthority();
+        return new LoginResponse(user.getUsername(), role);
     }
 
     private ResponseEntity<LoginResponse> respondWithTokens(UserDetails user, String refreshToken)

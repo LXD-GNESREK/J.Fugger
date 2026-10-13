@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.security.access.AccessDeniedException;
 import java.util.UUID;
 
 @RestControllerAdvice
@@ -40,6 +40,16 @@ public class GlobalExceptionHandler
 
         problem.setTitle("Internal Server Error");
         problem.setProperty("errorID", errorID);
+        return problem;
+    }
+    // Ohne diesen Handler würde der Catch-All oben eine @PreAuthorize-Ablehnung als 500 melden
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex)
+    {
+        log.warn("Zugriff durch Method Security verweigert");   // bewusst ohne Details (Log Injection)
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
+        problem.setTitle("Access Denied");
         return problem;
     }
 

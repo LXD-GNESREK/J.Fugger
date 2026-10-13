@@ -7,7 +7,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.example.ledgerly.security.AccessRules;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -18,6 +19,9 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
 
+// Wird beim Login/Refresh aufgerufen, also BEVOR jemand eingeloggt ist -> bewusst öffentlich.
+// Der eigentliche Schutz ist das (gehashte) Refresh-Token selbst.
+@PreAuthorize(AccessRules.PUBLIC)
 @Service
 public class RefreshTokenService {
 
