@@ -1,5 +1,7 @@
 package com.example.ledgerly.security;
 
+import com.example.ledgerly.security.bruteforce.AuthRateLimitFilter;
+import com.example.ledgerly.security.bruteforce.IpRateLimiter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -17,10 +19,13 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.time.Clock;
 
 @Configuration
 @EnableWebSecurity
@@ -30,7 +35,8 @@ public class SecurityConfig
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    JwtService jwtService,
-                                                   AppUserDetailsService userDetailsService) throws Exception
+                                                   AppUserDetailsService userDetailsService,
+                                                   IpRateLimiter ipRateLimiter) throws Exception
     {
         // Angular schickt den Token im Klartext im Header -> Handler ohne XOR-Maskierung
         CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
@@ -59,6 +65,9 @@ public class SecurityConfig
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                         .anyRequest().authenticated())
+                // Rate Limit VOR CSRF, damit auch Requests ohne gültigen CSRF-Token zählen
+                // (liegt nach dem CorsFilter -> auch die 429-Antwort hat CORS-Header)
+                .addFilterBefore(new AuthRateLimitFilter(ipRateLimiter), CsrfFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class);
 
@@ -79,6 +88,12 @@ public class SecurityConfig
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
+    }
+
+    @Bean
+    public Clock clock()
+    {
+        return Clock.systemUTC();
     }
 
     @Bean
