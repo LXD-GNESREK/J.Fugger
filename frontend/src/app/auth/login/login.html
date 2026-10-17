@@ -1,0 +1,30 @@
+<main class="login-page">
+  <mat-card class="login-card" appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Ledgerly</mat-card-title>
+      <mat-card-subtitle>Bitte anmelden</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <mat-form-field appearance="outline">
+          <mat-label>Benutzername</mat-label>
+          <input matInput formControlName="username" autocomplete="username" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Passwort</mat-label>
+          <input matInput type="password" formControlName="password" autocomplete="current-password" required>
+        </mat-form-field>
+
+        @if (error()) {
+          <p class="error" role="alert">{{ error() }}</p>
+        }
+
+        <button mat-flat-button type="submit" [disabled]="form.invalid || loading()">
+          Anmelden
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</main>
