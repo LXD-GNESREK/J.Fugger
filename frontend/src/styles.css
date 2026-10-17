@@ -1,1 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Schriften lokal mitliefern statt von Google Fonts laden (keine IP-Weitergabe an Google, kein fremder Server) */
+@import '@fontsource/roboto/300.css';
+@import '@fontsource/roboto/400.css';
+@import '@fontsource/roboto/500.css';
+@import 'material-icons/iconfont/filled.css';
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
