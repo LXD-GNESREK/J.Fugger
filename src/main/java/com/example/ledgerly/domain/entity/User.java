@@ -2,12 +2,15 @@ package com.example.ledgerly.domain.entity;
 
 import com.example.ledgerly.domain.model.Role;
 import jakarta.persistence.*;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class User
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,8 +22,6 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
-    //Wir können uns first und last name lassen und nur username verwenden?
-    //Was sagt ihr dazu?
     @Column(nullable = false, length = 100)
     private String firstName;
 
@@ -31,25 +32,24 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    // Vorgesetzter -> bildet das "Team" ab. Kann null sein (z. B. Admin, oberster Manager)
-    //Ist das zu viel?
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manager_id")
     private User manager;
 
-    // Deaktivieren statt Löschen, damit alte Ausgaben ihren Ersteller behalten
+    @OneToMany(mappedBy = "manager", fetch = FetchType.LAZY)
+    private List<User> subordinates = new ArrayList<>();
+
     @Column(nullable = false)
     private boolean enabled = true;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
-    // Für JPA
-    protected User() {
-    }
+    protected User() {}
 
     public User(String username, String passwordHash, String firstName,
-                String lastName, Role role, User manager) {
+                String lastName, Role role, User manager)
+    {
         this.username = username;
         this.passwordHash = passwordHash;
         this.firstName = firstName;
@@ -62,8 +62,6 @@ public class User {
     void onCreate() {
         this.createdAt = Instant.now();
     }
-
-    // --- Änderungen nur über gezielte Methoden (nur der Admin ruft diese über den Service auf) ---
 
     public void changeRole(Role role) {
         this.role = role;

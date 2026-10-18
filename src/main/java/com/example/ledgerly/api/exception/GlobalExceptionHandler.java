@@ -3,6 +3,7 @@ package com.example.ledgerly.api.exception;
 import com.example.ledgerly.domain.exception.AccessNotAllowedException;
 import com.example.ledgerly.domain.exception.ExpenseNotFoundException;
 import com.example.ledgerly.domain.exception.InvalidStatusTransitionException;
+import com.example.ledgerly.domain.exception.UserNotFoundException;
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +43,11 @@ public class GlobalExceptionHandler
         problem.setProperty("errorID", errorID);
         return problem;
     }
-    // Ohne diesen Handler würde der Catch-All oben eine @PreAuthorize-Ablehnung als 500 melden
+
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(AccessDeniedException ex)
     {
-        log.warn("Zugriff durch Method Security verweigert");   // bewusst ohne Details (Log Injection)
+        log.warn("Zugriff durch Method Security verweigert");
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
         problem.setTitle("Access Denied");
@@ -56,7 +57,9 @@ public class GlobalExceptionHandler
     @ExceptionHandler(ExpenseNotFoundException.class)
     public ProblemDetail handleExpenseNotFound(ExpenseNotFoundException ex)
     {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        log.warn("Expense lookup failed: {}", sanitiseForLog(ex.getMessage()));
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "The requested expense could not be found.");
         problem.setTitle("Resource Not Found");
         return problem;
     }
@@ -64,7 +67,9 @@ public class GlobalExceptionHandler
     @ExceptionHandler(InvalidStatusTransitionException.class)
     public ProblemDetail handleInvalidStatusTransition(InvalidStatusTransitionException ex)
     {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        log.warn("Invalid state transition attempt: {}", sanitiseForLog(ex.getMessage()));
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "The requested action cannot be performed in the current state.");
         problem.setTitle("State Conflict");
         return problem;
     }
@@ -76,6 +81,16 @@ public class GlobalExceptionHandler
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.");
         problem.setTitle("Access Denied");
+        return problem;
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFound(UserNotFoundException ex)
+    {
+        log.warn("User lookup failed: {}", sanitiseForLog(ex.getMessage()));
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "The requested user or assigned manager could not be found.");
+        problem.setTitle("User Not Found");
         return problem;
     }
 }
