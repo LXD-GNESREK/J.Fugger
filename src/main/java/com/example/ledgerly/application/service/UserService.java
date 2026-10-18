@@ -4,10 +4,12 @@ import com.example.ledgerly.domain.repository.UserRepository;
 import com.example.ledgerly.domain.entity.User;
 import com.example.ledgerly.api.dto.in.UserCreate;
 import com.example.ledgerly.domain.exception.UserNotFoundException;
+import com.example.ledgerly.security.AccessRules;
 
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Service
 public class UserService
@@ -22,6 +24,7 @@ public class UserService
     }
 
     @Transactional
+    @PreAuthorize(AccessRules.FINANCE_ADMIN)
     public User createUser(UserCreate request)
     {
         User manager = null;
