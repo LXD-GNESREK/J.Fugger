@@ -8,11 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/expenses")
+@SuppressFBWarnings(value = "SPRING_ENDPOINT", justification = "Intended REST Endpoint")
 public class ExpenseController
 {
     private final ExpenseService expenseService;
